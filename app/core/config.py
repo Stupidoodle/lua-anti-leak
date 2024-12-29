@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from functools import lru_cache
 
 
 class Settings(BaseSettings):
@@ -6,18 +7,22 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "anti_leak_redis"
     REDIS_PORT: int = 6379
 
-    JWT_SECRET: str = None
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION: int = 600
 
-    # In production, load from a secure secret manager or encrypted volume:
-    PRIVATE_KEY_PATH: str = "./keys/private_key.pem"
-    PUBLIC_KEY_PATH: str = "./keys/public_key.pem"
+    DEBUG: bool = False
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "Anti Leak API"
 
-    MASTER_SYM_KEY: str = None
+    VAULT_ADDRESS: str = None
+    VAULT_TOKEN: str = None
+    VAULT_MOUNT_POINT: str = None
 
     class Config:
         env_file = ".env"
+        case_sensitive = True
 
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()

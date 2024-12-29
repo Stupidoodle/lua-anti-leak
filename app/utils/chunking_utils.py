@@ -5,12 +5,11 @@ import redis
 import time
 from random import shuffle
 
-from app.core.config import settings
+from app.core.config import get_settings
 from app.core.logging_config import configure_logger
 
-
+settings = get_settings()
 logger = configure_logger()
-
 r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 
 

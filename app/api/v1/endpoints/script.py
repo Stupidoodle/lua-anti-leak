@@ -6,28 +6,42 @@ import json
 import redis
 import time
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.params import Depends
 
+from app.core.secrets import get_vault_client, TokenManager
 from app.services.auth import verify_jwt
-from app.core.config import settings
+from app.core.config import get_settings
 from app.utils.chunking_utils import chunk_lua_script, refresh_chunks
 from app.utils.crypto_utils import encrypt_aes_gcm, sign_data
 from app.utils.encryption_utils import mock_encrypt
 
 router = APIRouter()
+settings = get_settings()
 r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 
-chunked_script_length = None
+chunked_script_length: int = 0
+
+
+def get_token_manager() -> TokenManager:
+    vault_client = get_vault_client()
+    return TokenManager(vault_client)
 
 
 @router.get("/script_chunk/{chunk_index}")
-def get_script_chunk(chunk_index: int, token: str = Query(...)):
+def get_script_chunk(
+    chunk_index: int,
+    token: str = Query(...),
+    token_manager: TokenManager = Depends(get_token_manager),
+):
     global chunked_script_length
-    decoded = verify_jwt(token)
-    user_id = decoded["uid"]
+    token_manager.verify_token(token)
 
     ephemeral_key = r.get(f"ephemeral:{token}")
     if not ephemeral_key:
         raise HTTPException(status_code=401, detail="Session invalid or expired")
+
+    if chunked_script_length == 0:
+        raise HTTPException(status_code=404, detail="Script not available")
 
     if chunk_index < 0 or chunk_index >= chunked_script_length:
         raise HTTPException(status_code=404, detail="Chunk not found")
@@ -71,7 +85,7 @@ async def startup_event() -> None:
     global chunked_script_length
     try:
         async with aiofiles.open(
-                "../../../assets/private_script.lua", mode="r"
+            "../../../assets/private_script.lua", mode="r"
         ) as lua_file:
             lua_script = await lua_file.read()
             chunk_size = 10

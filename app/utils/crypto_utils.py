@@ -5,7 +5,9 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 
 
 with open(settings.PRIVATE_KEY_PATH, "rb") as key_file:

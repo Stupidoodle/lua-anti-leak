@@ -2,7 +2,9 @@ import time
 import jwt
 from fastapi import HTTPException
 
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 
 
 def generate_jwt(user_id: int) -> str:
