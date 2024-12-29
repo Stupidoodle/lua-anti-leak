@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16.1
+    container_name: anti_leak_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: anti_leak
+    volumes:
+        - anti_leak_db_data:/var/lib/postgresql/data
+    ports:
+        - "5432:5432"
+
+  redis:
+    image: redis:7.4
+    container_name: anti_leak_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+        - redis_data:/data
+volumes:
+  anti_leak_db_data:
+  redis_data:
