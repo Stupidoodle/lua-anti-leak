@@ -21,6 +21,11 @@ class VaultClient:
 
     def initialize(self):
         """Initialize Vault with required secrets if they do not exist."""
+        mounted_secrets_engines = self.client.sys.list_mounted_secrets_engines()
+
+        if f"{self.mount_point}/" in mounted_secrets_engines:
+            return
+
         if self.mount_point not in self.client.sys.list_mounted_secrets_engines():
             self.client.sys.enable_secrets_engine(
                 backend_type="kv",

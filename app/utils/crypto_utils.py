@@ -6,15 +6,18 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
 from app.core.config import get_settings
+from app.core.secrets import get_vault_client
+from app.core.key_management import KeyManager
 
 settings = get_settings()
+key_manager = KeyManager(get_vault_client())
 
-
-with open(settings.PRIVATE_KEY_PATH, "rb") as key_file:
-    private_key = serialization.load_pem_private_key(key_file.read(), password=None)
-
-with open(settings.PUBLIC_KEY_PATH, "rb") as key_file:
-    public_key = serialization.load_pem_public_key(key_file.read())
+private_key, public_key = (
+    serialization.load_pem_private_key(
+        key_manager.get_active_key()["private_key"], password=None
+    ),  # TODO: Add password
+    serialization.load_pem_public_key(key_manager.get_active_key()["public_key"]),
+)
 
 
 def generate_ephemeral_key() -> bytes:
