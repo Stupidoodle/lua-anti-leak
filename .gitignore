@@ -123,6 +123,7 @@ celerybeat.pid
 
 # Environments
 .env.prod
+.env.dev
 .venv
 env/
 venv/
@@ -164,4 +165,3 @@ cython_debug/
 /src/.claudesync/
 /backend/.claudesync/
 .claudeignore
-.env.prod
