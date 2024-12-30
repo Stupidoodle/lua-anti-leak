@@ -164,3 +164,4 @@ cython_debug/
 /src/.claudesync/
 /backend/.claudesync/
 .claudeignore
+.env.prod
