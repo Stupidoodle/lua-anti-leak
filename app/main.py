@@ -46,12 +46,7 @@ async def lifespan(arg_app: FastAPI) -> any:
         engine.dispose()
         engine.pool.dispose()
 
-        engine.pool = engine.pool.recreate(
-            size=settings.DB_POOL_SIZE,
-            max_overflow=settings.DB_MAX_OVERFLOW,
-            timeout=settings.DB_POOL_TIMEOUT,
-            recycle=settings.DB_POOL_RECYCLE,
-        )
+        engine.pool = engine.pool.recreate()
 
         logger.info(
             "application_startup_complete",
@@ -153,7 +148,7 @@ async def log_requests(request: Request, call_next: any):
         raise
 
 
-@app.exception_handlers(Exception)
+@app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler for unhandled exceptions"""
     logger.error(

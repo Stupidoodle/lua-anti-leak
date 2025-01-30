@@ -41,7 +41,7 @@ class HealthChecker:
             self.db.query(AuthorizedUser).first()
             end_time = time.time()
             latency_ms = (end_time - start_time) * 1000
-            return {"status": "health", "latency_ms": latency_ms}
+            return {"status": "healthy", "latency_ms": latency_ms}
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
 
@@ -49,10 +49,10 @@ class HealthChecker:
         """Check Redis connectivity and operations"""
         try:
             start_time = time.time()
-            await self.redis.ping()
+            self.redis.ping()
             end_time = time.time()
             latency_ms = (end_time - start_time) * 1000
-            return {"status": "health", "latency_ms": latency_ms}
+            return {"status": "healthy", "latency_ms": latency_ms}
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
 
@@ -96,7 +96,7 @@ class HealthChecker:
 @router.get("/health")
 async def health_check(
     db: Session = Depends(get_db),
-) -> dict[str, any]:
+):
     """Comprehensive health check endpoint"""
     vault_client = get_vault_client()
     checker = HealthChecker(db, r, vault_client)

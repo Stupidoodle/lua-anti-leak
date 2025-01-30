@@ -8,20 +8,15 @@ settings = get_settings()
 
 
 @pytest.fixture
-def client() -> TestClient:
-    with TestClient(app) as client:
-        with app.router.lifespan_context(app):
-            yield client
+def client():
+    with TestClient(app) as test_client:
+        yield test_client
 
 
-@pytest.mark.asyncio
-async def test_lifespan_startup_and_shutdown() -> None:
-    async with app.router.lifespan_context(app) as lifespan:
-        assert app.state.redis  # Check redis initialization
-
-
-def test_rate_limiting() -> None:
+def test_rate_limiting(client) -> None:
     """Test rate limiting functionality"""
+    assert hasattr(app.state, "redis")
+
     for _ in range(settings.RATE_LIMIT):
         response = client.post(
             f"{settings.API_V1_STR}/auth/auth",

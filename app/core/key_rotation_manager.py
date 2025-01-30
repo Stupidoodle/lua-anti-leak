@@ -28,7 +28,7 @@ class KeyRotationManager:
             return
 
         try:
-            last_rotation = await self.redis.get(self.last_rotation_key)
+            last_rotation = self.redis.get(self.last_rotation_key)
             if last_rotation:
                 last_rotation_time = datetime.fromisoformat(last_rotation.decode())
                 if (
@@ -39,11 +39,11 @@ class KeyRotationManager:
 
             self.key_manager.rotate_keys()
 
-            await self.redis.set(
+            self.redis.set(
                 self.last_rotation_key,
                 datetime.now(timezone.utc).isoformat(),
             )
 
             logger.info("key_rotation_check_complete")
         finally:
-            await self.redis.delete(self.rotation_lock_key)
+            self.redis.delete(self.rotation_lock_key)

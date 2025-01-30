@@ -12,13 +12,6 @@ from app.core.key_management import KeyManager
 settings = get_settings()
 key_manager = KeyManager(get_vault_client())
 
-private_key, public_key = (
-    serialization.load_pem_private_key(
-        key_manager.get_active_key()["private_key"], password=None
-    ),  # TODO: Add password
-    serialization.load_pem_public_key(key_manager.get_active_key()["public_key"]),
-)
-
 
 def generate_ephemeral_key() -> bytes:
     """Generates a random 32-bytes AES key (for AES-256)"""
@@ -47,6 +40,13 @@ def sign_data(data: bytes) -> str:
     Sign data with RSA private key using PKCS#1 v1.5 and SHA256.
     Return base64-encoded signature.
     """
+    private_key, public_key = (
+        serialization.load_pem_private_key(
+            key_manager.get_active_key()["private_key"], password=None
+        ),  # TODO: Add password
+        serialization.load_pem_public_key(key_manager.get_active_key()["public_key"]),
+    )
+
     signature = private_key.sign(data, padding.PKCS1v15(), hashes.SHA256())
     return base64.b64encode(signature).decode()
 
@@ -56,6 +56,13 @@ def verify_signature(data: bytes, signature_b64: str) -> bool:
     Verify signature with the public key. Not typically needed server-side,
     but included for reference.
     """
+    private_key, public_key = (
+        serialization.load_pem_private_key(
+            key_manager.get_active_key()["private_key"], password=None
+        ),  # TODO: Add password
+        serialization.load_pem_public_key(key_manager.get_active_key()["public_key"]),
+    )
+
     signature = base64.b64decode(signature_b64)
     # noinspection PyBroadException
     try:

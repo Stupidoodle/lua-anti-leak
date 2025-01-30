@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW: int = 60
 
     MAX_REQUEST_SIZE: int = 1024 * 1024 * 10  # 10 MB
+    MAX_CONTENT_LENGTH: int = 1024 * 1024 * 10  # 10 MB
     MAX_JSON_DEPTH: int = 10
 
     REDIS_HOST: str = "anti_leak_redis"
@@ -42,9 +43,9 @@ class Settings(BaseSettings):
 
     class Config:
         if os.getenv("ENV", "prod") == "dev":
-            env_file = "../../.env.dev"
+            env_file = ".env.dev"
         else:
-            env_file = "../../.env.prod"
+            env_file = ".env.prod"
         case_sensitive = True
 
     @property

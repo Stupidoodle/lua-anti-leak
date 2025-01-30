@@ -58,7 +58,7 @@ class KeyManager:
                 mount_point=self.mount_point,
             )
 
-            self.vault_client.clients.secrets.kv.v2.create_or_update_secret(
+            self.vault_client.client.secrets.kv.v2.create_or_update_secret(
                 path=self.active_key_path,
                 secret={"active_key_id": key_id},
                 mount_point=self.mount_point,

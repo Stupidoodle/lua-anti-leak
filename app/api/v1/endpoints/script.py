@@ -85,7 +85,7 @@ async def startup_event() -> None:
     global chunked_script_length
     try:
         async with aiofiles.open(
-            "../../../assets/private_script.lua", mode="r"
+            "app/assets/private_script.lua", mode="r"
         ) as lua_file:
             lua_script = await lua_file.read()
             chunk_size = 10

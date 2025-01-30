@@ -40,10 +40,10 @@ class RateLimiter:
 
         pipeline = self.redis.pipeline()
 
-        await pipeline.incr(key)
-        await pipeline.expire(key, self.window)
+        pipeline.incr(key)
+        pipeline.expire(key, self.window)
 
-        result = await pipeline.execute()
+        result = pipeline.execute()
         request_count = result[0]
 
         if request_count > self.rate_limit:
