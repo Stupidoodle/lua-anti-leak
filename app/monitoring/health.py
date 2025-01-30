@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.core.config import get_settings
+from app.core.redis_config import get_redis
 from app.core.secrets import get_vault_client
 from app.models.auth import AuthorizedUser
 
@@ -15,7 +16,6 @@ logger = structlog.get_logger()
 settings = get_settings()
 
 router = APIRouter()
-r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 
 
 def get_db():
@@ -95,7 +95,7 @@ class HealthChecker:
 
 @router.get("/health")
 async def health_check(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), r: redis.Redis = Depends(get_redis)
 ):
     """Comprehensive health check endpoint"""
     vault_client = get_vault_client()

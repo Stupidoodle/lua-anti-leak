@@ -1,5 +1,3 @@
-import redis
-import structlog
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -16,20 +14,15 @@ from app.middleware.validation import validation_middleware
 from app.monitoring.health import router as health_router
 from app.monitoring.metrics import metrics_middleware
 from app.core.config import get_settings
+from app.core.logging_config import configure_logger
+from app.core.redis_config import get_redis
 from app.core.secrets import get_vault_client
 from app.core.key_management import KeyManager
 from app.core.key_rotation_manager import KeyRotationManager
-from app.database import SessionLocal, engine
+from app.database import engine
 
-logger = structlog.get_logger()
+logger = configure_logger()
 settings = get_settings()
-redis_pool = redis.ConnectionPool(
-    host=settings.REDIS_HOST,
-    port=settings.REDIS_PORT,
-    max_connections=settings.REDIS_MAX_CONNECTIONS,
-    socket_timeout=settings.REDIS_SOCKET_TIMEOUT,
-)
-r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 
 
 @asynccontextmanager
@@ -40,7 +33,9 @@ async def lifespan(arg_app: FastAPI) -> any:
         key_manager = KeyManager(vault_client)
         key_manager.initialize_if_needed()
 
-        key_rotation_manager = KeyRotationManager(r, key_manager)
+        redis_client = get_redis()
+
+        key_rotation_manager = KeyRotationManager(redis_client, key_manager)
         await key_rotation_manager.check_and_rotate_keys()
 
         engine.dispose()
@@ -65,8 +60,7 @@ async def lifespan(arg_app: FastAPI) -> any:
     try:
         engine.dispose()
 
-        app.state.redis.close()
-        redis_pool.disconnect()
+        redis_client.close()
 
         logger.info("application_shutdown_complete", status="success")
     except Exception as e:
@@ -75,7 +69,6 @@ async def lifespan(arg_app: FastAPI) -> any:
 
 
 app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan, version=settings.VERSION)
-app.state.redis = r
 
 # noinspection PyTypeChecker
 app.add_middleware(

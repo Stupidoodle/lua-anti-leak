@@ -7,8 +7,6 @@ from app.core.secrets import get_vault_client, TokenManager
 from app.database import SessionLocal
 from app.models.auth import AuthorizedUser
 from app.schemas.auth import AuthPayload
-from app.services.auth import generate_jwt
-from app.utils.crypto_utils import generate_ephemeral_key
 
 router = APIRouter()
 settings = get_settings()
@@ -46,8 +44,10 @@ def auth_endpoint(
     if user_entry.username != payload.username:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    token = token_manager.create_token(payload.user_id)
-    ephemeral_key = generate_ephemeral_key()
+    token = token_manager.create_token(
+        user_id=payload.user_id, username=payload.username
+    )
+    ephemeral_key = token_manager.generate_ephemeral_key_from_jwt(token=token)
 
     r.setex(f"ephemeral:{token}", settings.JWT_EXPIRATION, ephemeral_key)
 

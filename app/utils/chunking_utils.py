@@ -28,6 +28,15 @@ async def chunk_lua_script(script: str, chunk_size: int) -> list[str]:
 
 def update_chunks(chunks: list[str], time_window: int) -> None:
     """Update the Redis cache with the given chunks."""
+    old_metadata_keys = r.keys("chunk_metadata:*")
+    for metadata_key in old_metadata_keys:
+        old_metadata = r.get(metadata_key)
+        if old_metadata:
+            old_metadata = json.loads(old_metadata)
+            for chunk_key in old_metadata["chunks"].values():
+                r.delete(chunk_key)  # Remove old chunk keys
+            r.delete(metadata_key)  # Remove old metadata
+
     chunk_metadata = {
         "chunks": {},
         "order": [],
@@ -35,13 +44,17 @@ def update_chunks(chunks: list[str], time_window: int) -> None:
 
     for idx, chunk in enumerate(chunks):
         chunk_key = f"chunk:{time_window}:{idx}"
-        r.set(chunk_key, "\n".join(chunk), ex=120)
+        r.set(chunk_key, chunk, ex=120)  # Store new chunk with expiration
         chunk_metadata["chunks"][idx] = chunk_key
         chunk_metadata["order"].append(idx)
 
     shuffle(chunk_metadata["order"])
 
     r.set(f"chunk_metadata:{time_window}", json.dumps(chunk_metadata), ex=120)
+
+    logger.info(
+        f"Updated Redis with {len(chunks)} chunks for time window {time_window}"
+    )
 
 
 async def refresh_chunks(chunks: list[str], interval: int) -> None:

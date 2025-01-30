@@ -9,7 +9,6 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.params import Depends
 
 from app.core.secrets import get_vault_client, TokenManager
-from app.services.auth import verify_jwt
 from app.core.config import get_settings
 from app.utils.chunking_utils import chunk_lua_script, refresh_chunks
 from app.utils.crypto_utils import encrypt_aes_gcm, sign_data
@@ -63,7 +62,10 @@ def get_script_chunk(
 
     encrypted_chunk = mock_encrypt(raw_chunk)
 
-    chunk_bytes = encrypted_chunk.encode("utf-8")
+    if isinstance(encrypted_chunk, str):
+        chunk_bytes = encrypted_chunk.encode("utf-8")
+    else:
+        chunk_bytes = encrypted_chunk
 
     encrypted_data = encrypt_aes_gcm(chunk_bytes, ephemeral_key)
 

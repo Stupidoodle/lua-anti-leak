@@ -1,6 +1,6 @@
+import hashlib
 import hvac
 import jwt
-import os
 from cryptography.fernet import Fernet
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -75,7 +75,7 @@ class TokenManager:
         self.vault_client = vault_client
 
     def create_token(
-        self, user_id: int, expires_delta: Optional[timedelta] = None
+        self, user_id: int, username: str, expires_delta: Optional[timedelta] = None
     ) -> str:
         """Create a JWT token for the given user_id."""
         jwt_secret = self.vault_client.get_secret("jwt_secret")
@@ -87,10 +87,35 @@ class TokenManager:
 
         to_encode = {
             "uid": user_id,
+            "username": username,
             "exp": expires,
         }
 
         return jwt.encode(to_encode, jwt_secret, algorithm=settings.JWT_ALGORITHM)
+
+    @staticmethod
+    def generate_ephemeral_key_from_jwt(token: str) -> bytes:
+        """Generate an ephemeral key from a JWT token."""
+        try:
+            # Decode JWT without verification to extract claims
+            decoded_payload = jwt.decode(token, options={"verify_signature": False})
+
+            # Use 'uid', 'exp', and 'username' to generate entropy
+            uid = str(decoded_payload.get("uid", "0"))
+            exp = str(decoded_payload.get("exp", "0"))
+            username = decoded_payload.get("username", "")
+
+            # Construct input for key derivation
+            derivation_input = f"{uid}:{username}:{exp}".encode()
+
+            # Generate a 32-byte AES key using SHA256 (no HMAC to avoid needing the secret)
+            derived_key = hashlib.sha256(derivation_input).digest()
+
+            return derived_key[:32]  # Return 32-byte AES key
+        except jwt.ExpiredSignatureError:
+            raise ValueError("JWT has expired.")
+        except jwt.InvalidTokenError:
+            raise ValueError("Invalid JWT.")
 
     def verify_token(self, token: str) -> dict:
         """Verify the JWT token and return the payload."""

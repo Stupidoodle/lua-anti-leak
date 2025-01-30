@@ -1,12 +1,12 @@
 import redis
-import structlog
 import time
-from datetime import timedelta
-from fastapi import Request, HTTPException
+from fastapi import Depends, Request, HTTPException
 
 from app.core.config import get_settings
+from app.core.logging_config import configure_logger
+from app.core.redis_config import get_redis
 
-logger = structlog.get_logger()
+logger = configure_logger()
 settings = get_settings()
 
 
@@ -65,10 +65,10 @@ class RateLimiter:
 async def rate_limit_middleware(request: Request, call_next: any) -> any:
     """Middleware to apply rate limiting to all requests"""
     try:
-        if request.url.path == "/health":
+        if request.url.path == "monitoring/health":
             return await call_next(request)
 
-        rate_limiter = RateLimiter(request.app.state.redis)
+        rate_limiter = RateLimiter(get_redis())
         await rate_limiter.is_rate_limited(request)
 
         response = await call_next(request)

@@ -1,12 +1,11 @@
 import redis
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, Query, Depends
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.secrets import get_vault_client, TokenManager
 from app.database import SessionLocal
 from app.models.telemetry import Telemetry
-from app.services.auth import verify_jwt
 from app.schemas.telemetry import TelemetryPayload
 
 router = APIRouter()
